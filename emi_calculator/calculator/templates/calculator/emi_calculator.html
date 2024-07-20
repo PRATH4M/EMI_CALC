@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMI Calculator</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+        }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #777;
+        }
+        .error {
+            color: red;
+        }
+        .loading {
+            display: none;
+        }
+        .loader {
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #3498db;
+            width: 120px;
+            height: 120px;
+            animation: spin 2s linear infinite;
+            display: none;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+        }
+        .currency-select {
+            width: 100%;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center">EMI Calculator</h1>
+        <form>
+            <div class="form-group">
+                <label for="currency">Currency:</label>
+                <select id="currency" class="currency-select">
+                    <option value="$">USD ($)</option>
+                    <option value="€">EUR (€)</option>
+                    <option value="£">GBP (£)</option>
+                    <option value="₹">INR (₹)</option>
+                    <option value="¥">JPY (¥)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="principal">Principal Amount: <span id="principal_value"></span></label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="principal_input" step="1000" placeholder="Enter principal amount">
+                    <div class="input-group-append">
+                        <span class="input-group-text" id="currency_symbol">$</span>
+                    </div>
+                </div>
+                <input type="range" class="form-control-range mt-2" id="principal" min="1000" max="1000000" step="1000">
+            </div>
+            <div class="form-group">
+                <label for="rate">Annual Interest Rate (%): <span id="rate_value"></span></label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="rate_input" step="0.1" placeholder="Enter interest rate">
+                    <div class="input-group-append">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <input type="range" class="form-control-range mt-2" id="rate" min="1" max="20" step="0.1">
+            </div>
+            <div class="form-group">
+                <label for="time">Time Period (Years): <span id="time_value"></span></label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="time_input" step="1" placeholder="Enter time period">
+                    <div class="input-group-append">
+                        <span class="input-group-text">years</span>
+                    </div>
+                </div>
+                <input type="range" class="form-control-range mt-2" id="time" min="1" max="30" step="1">
+            </div>
+            <button type="button" class="btn btn-primary btn-block" id="calculate">Calculate EMI</button>
+        </form>
+        <h2 class="text-center mt-4">Monthly EMI: <span id="emi_currency"></span><span id="emi"></span></h2>
+        <p class="error text-center" id="error"></p>
+        <p class="loading text-center" id="loading">Calculating...</p>
+        <div class="loader" id="loader"></div>
+    </div>
+    <footer>
+        Developed by PRATHAM S (1JT21CS074)
+    </footer>
+    <script>
+        $(document).ready(function() {
+            // Initialize display values
+            updateValues();
+
+            // Update display values when sliders are moved
+            $('#principal').on('input', function() {
+                $('#principal_value').text($('#currency').val() + $(this).val());
+                $('#principal_input').val($(this).val());
+            });
+
+            $('#rate').on('input', function() {
+                $('#rate_value').text($(this).val() + '%');
+                $('#rate_input').val($(this).val());
+            });
+
+            $('#time').on('input', function() {
+                $('#time_value').text($(this).val() + ' years');
+                $('#time_input').val($(this).val());
+            });
+
+            // Update sliders when input fields are changed
+            $('#principal_input').on('input', function() {
+                $('#principal').val($(this).val());
+                $('#principal_value').text($('#currency').val() + $(this).val());
+            });
+
+            $('#rate_input').on('input', function() {
+                $('#rate').val($(this).val());
+                $('#rate_value').text($(this).val() + '%');
+            });
+
+            $('#time_input').on('input', function() {
+                $('#time').val($(this).val());
+                $('#time_value').text($(this).val() + ' years');
+            });
+
+            // Update currency symbol when currency is changed
+            $('#currency').change(function() {
+                $('#currency_symbol').text($(this).val());
+                updateValues();
+            });
+
+            function updateValues() {
+                $('#principal_value').text($('#currency').val() + $('#principal').val());
+                $('#rate_value').text($('#rate').val() + '%');
+                $('#time_value').text($('#time').val() + ' years');
+                $('#principal_input').val($('#principal').val());
+                $('#rate_input').val($('#rate').val());
+                $('#time_input').val($('#time').val());
+            }
+
+            function getExchangeRate(currency) {
+                switch (currency) {
+                    case '€': return 0.85; // Example rate from USD to EUR
+                    case '£': return 0.75; // Example rate from USD to GBP
+                    case '₹': return 74;   // Example rate from USD to INR
+                    case '¥': return 110;  // Example rate from USD to JPY
+                    default: return 1;     // USD
+                }
+            }
+
+            $('#calculate').click(function() {
+                var principal = $('#principal').val();
+                var rate = $('#rate').val();
+                var time = $('#time').val();
+                var currency = $('#currency').val();
+                var errorMessage = "";
+
+                if (!principal || principal <= 0) {
+                    errorMessage += "Please enter a valid principal amount.<br>";
+                }
+                if (!rate || rate <= 0) {
+                    errorMessage += "Please enter a valid interest rate.<br>";
+                }
+                if (!time || time <= 0) {
+                    errorMessage += "Please enter a valid time period.<br>";
+                }
+
+                if (errorMessage) {
+                    $('#error').html(errorMessage);
+                    $('#emi').text("");
+                } else {
+                    $('#error').html("");
+                    $('#loading').show();
+                    $('#loader').show();
+
+                    var exchangeRate = getExchangeRate(currency);
+                    var principalInUSD = principal / exchangeRate; // Convert to USD for calculation
+
+                    $.ajax({
+                        url: 'calculate_emi/',
+                        data: {
+                            'principal': principalInUSD,
+                            'rate': rate,
+                            'time': time
+                        },
+                        success: function(data) {
+                            var emiInSelectedCurrency = data.emi * exchangeRate; // Convert back to selected currency
+                            $('#emi_currency').text(currency);
+                            $('#emi').text(emiInSelectedCurrency.toFixed(2));
+                        },
+                        complete: function() {
+                            $('#loading').hide();
+                            $('#loader').hide();
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
